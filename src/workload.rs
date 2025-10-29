@@ -25,17 +25,29 @@ impl Workload {
     }
 
     pub fn next(&self) -> Operation {
-        match rng().sample(&self.dist) {
+        rng().sample(&self.dist).into()
+    }
+}
+
+#[repr(usize)]
+#[derive(Copy, Clone, Debug)]
+pub enum Operation {
+    Read = 0,
+    Scan = 1,
+    Write = 2,
+}
+
+impl Operation {
+    pub const COUNT: usize = 3;
+}
+
+impl From<usize> for Operation {
+    fn from(value: usize) -> Self {
+        match value {
             0 => Operation::Read,
             1 => Operation::Scan,
             2 => Operation::Write,
             _ => unreachable!(),
         }
     }
-}
-
-pub enum Operation {
-    Read,
-    Scan,
-    Write,
 }

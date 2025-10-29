@@ -7,6 +7,6 @@ pub use zipfian::Zipfian;
 mod sequential;
 pub use sequential::Sequential;
 
-pub trait Generator {
+pub trait Generator: Send + Sync {
     fn next(&self) -> u64;
 }

@@ -7,6 +7,7 @@ mod generator;
 mod load;
 mod open;
 mod run;
+mod runtime;
 mod workload;
 
 #[derive(Parser)]
