@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand};
 
+mod dataset;
 mod db;
 mod generator;
 mod load;
