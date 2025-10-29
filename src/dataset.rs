@@ -1,7 +1,7 @@
-use clap::Args;
+use clap::{Args, ValueEnum};
 use rand::{Rng, rng};
 
-use crate::generator::Generator;
+use crate::generator::{Generator, Sequential, Uniform, Zipfian};
 
 #[derive(Args)]
 #[group(skip)]
@@ -12,6 +12,15 @@ pub struct Options {
     vlen: usize,
     #[arg(long, short = 'n', default_value_t = 1000)]
     records: usize,
+    #[arg(long, short = 'd', value_enum, default_value_t = Distribution::Uniform)]
+    distribution: Distribution,
+}
+
+#[derive(Clone, ValueEnum)]
+enum Distribution {
+    Uniform,
+    Zipfian,
+    Sequential,
 }
 
 pub struct Dataset {
@@ -20,14 +29,13 @@ pub struct Dataset {
 }
 
 impl Dataset {
-    pub fn new<G>(options: Options, generator: G) -> Self
-    where
-        G: Generator + 'static,
-    {
-        Self {
-            options,
-            generator: Box::new(generator),
-        }
+    pub fn new(options: Options) -> Self {
+        let generator: Box<dyn Generator> = match options.distribution {
+            Distribution::Uniform => Box::new(Uniform::new()),
+            Distribution::Zipfian => Box::new(Zipfian::new(options.records as u64)),
+            Distribution::Sequential => Box::new(Sequential::new()),
+        };
+        Self { options, generator }
     }
 }
 

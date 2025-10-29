@@ -7,12 +7,12 @@ use rand_distr::Zipf;
 use crate::generator::Generator;
 
 #[derive(Clone)]
-pub struct ZipfianGenerator {
+pub struct Zipfian {
     dist: Zipf<f64>,
     hash: FnvBuildHasher,
 }
 
-impl ZipfianGenerator {
+impl Zipfian {
     pub fn new(n: u64) -> Self {
         Self {
             dist: Zipf::new(n as f64, 0.99).unwrap(),
@@ -21,7 +21,7 @@ impl ZipfianGenerator {
     }
 }
 
-impl Generator for ZipfianGenerator {
+impl Generator for Zipfian {
     fn next(&self) -> u64 {
         let x = rng().sample(&self.dist) as u64;
         self.hash.hash_one(x)

@@ -1,11 +1,11 @@
 mod uniform;
-pub use uniform::UniformGenerator;
+pub use uniform::Uniform;
 
 mod zipfian;
-pub use zipfian::ZipfianGenerator;
+pub use zipfian::Zipfian;
 
 mod sequential;
-pub use sequential::SequentialGenerator;
+pub use sequential::Sequential;
 
 pub trait Generator {
     fn next(&self) -> u64;
