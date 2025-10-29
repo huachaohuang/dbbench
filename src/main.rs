@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::{Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 
 mod dataset;
 mod db;
@@ -24,19 +24,6 @@ enum Command {
     Load(load::Command),
     /// Open a database for inspection
     Open(open::Command),
-}
-
-#[derive(Args)]
-#[group(skip)]
-struct Options {
-    #[arg(long, short = 'k', default_value_t = 10)]
-    klen: usize,
-    #[arg(long, short = 'v', default_value_t = 100)]
-    vlen: usize,
-    #[arg(long, short = 'n', default_value_t = 1000)]
-    records: usize,
-    #[arg(long, short = 't', default_value_t = 1)]
-    threads: usize,
 }
 
 fn main() -> Result<()> {

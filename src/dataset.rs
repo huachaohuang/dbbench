@@ -6,13 +6,13 @@ use crate::generator::{Generator, Sequential, Uniform, Zipfian};
 #[derive(Args)]
 #[group(skip)]
 pub struct Options {
-    #[arg(long, short = 'k', default_value_t = 10)]
+    #[arg(long, short, default_value_t = 10)]
     klen: usize,
-    #[arg(long, short = 'v', default_value_t = 100)]
+    #[arg(long, short, default_value_t = 100)]
     vlen: usize,
-    #[arg(long, short = 'n', default_value_t = 1000)]
-    records: usize,
-    #[arg(long, short = 'd', value_enum, default_value_t = Distribution::Uniform)]
+    #[arg(long, short, default_value_t = 1000)]
+    num_records: usize,
+    #[arg(long, short, value_enum, default_value_t = Distribution::Uniform)]
     distribution: Distribution,
 }
 
@@ -32,7 +32,7 @@ impl Dataset {
     pub fn new(options: Options) -> Self {
         let generator: Box<dyn Generator> = match options.distribution {
             Distribution::Uniform => Box::new(Uniform::new()),
-            Distribution::Zipfian => Box::new(Zipfian::new(options.records as u64)),
+            Distribution::Zipfian => Box::new(Zipfian::new(options.num_records as u64)),
             Distribution::Sequential => Box::new(Sequential::new()),
         };
         Self { options, generator }
@@ -41,7 +41,7 @@ impl Dataset {
 
 impl Dataset {
     pub fn next(&self, k: &mut Vec<u8>) {
-        let x = self.generator.next() % self.options.records as u64;
+        let x = self.generator.next() % self.options.num_records as u64;
         let b = x.to_be_bytes();
         k.clear();
         if let Some(i) = b.len().checked_sub(self.options.klen) {

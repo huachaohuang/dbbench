@@ -1,20 +1,14 @@
 use anyhow::Result;
-use clap::{Args, ValueEnum};
+use clap::Args;
 
 #[derive(Args)]
 pub struct Command {
     #[command(flatten)]
     db: crate::db::Options,
     #[command(flatten)]
-    options: crate::Options,
-    #[arg(long, short, value_enum, default_value_t = Distribution::Sequential)]
-    distribution: Distribution,
-}
-
-#[derive(Clone, ValueEnum)]
-enum Distribution {
-    Uniform,
-    Sequential,
+    dataset: crate::dataset::Options,
+    #[arg(long, short = 't', default_value_t = 1)]
+    num_threads: usize,
 }
 
 impl Command {

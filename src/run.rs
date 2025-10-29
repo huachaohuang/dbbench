@@ -1,26 +1,18 @@
 use anyhow::Result;
-use clap::{Args, ValueEnum};
+use clap::Args;
 
 #[derive(Args)]
 pub struct Command {
     #[command(flatten)]
     db: crate::db::Options,
     #[command(flatten)]
-    options: crate::Options,
-    #[arg(long, short, default_value_t = 1000)]
-    operations: usize,
-    #[arg(long, short, default_value_t = 0.95)]
-    read_ratio: f32,
-    #[arg(long, short, default_value_t = 0.05)]
-    write_ratio: f32,
-    #[arg(long, short, value_enum, default_value_t = Distribution::Uniform)]
-    distribution: Distribution,
-}
-
-#[derive(Clone, ValueEnum)]
-enum Distribution {
-    Uniform,
-    Zipfian,
+    dataset: crate::dataset::Options,
+    #[command(flatten)]
+    workload: crate::workload::Options,
+    #[arg(long, short = 't', default_value_t = 1)]
+    num_threads: usize,
+    #[arg(long, short = 'o', default_value_t = 1000)]
+    num_operations: usize,
 }
 
 impl Command {
