@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::{Args, Parser, Subcommand};
 
 mod db;
+mod generator;
 mod load;
 mod open;
 mod run;
