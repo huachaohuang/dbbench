@@ -1,12 +1,9 @@
 use anyhow::Result;
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 mod dataset;
 mod db;
 mod generator;
-mod load;
-mod open;
-mod run;
 mod runtime;
 mod workload;
 
@@ -20,11 +17,59 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     /// Run a benchmark
-    Run(run::Command),
+    Run(RunCommand),
     /// Load data into a database
-    Load(load::Command),
+    Load(LoadCommand),
     /// Open a database for inspection
-    Open(open::Command),
+    Open(OpenCommand),
+}
+
+#[derive(Args)]
+struct RunCommand {
+    #[command(flatten)]
+    db: db::Options,
+    #[command(flatten)]
+    dataset: dataset::Options,
+    #[command(flatten)]
+    workload: workload::Options,
+    #[arg(long, short = 't', default_value_t = 1)]
+    num_threads: usize,
+    #[arg(long, short = 'o', default_value_t = 1000)]
+    num_operations: usize,
+}
+
+impl RunCommand {
+    fn run(&self) -> Result<()> {
+        todo!()
+    }
+}
+
+#[derive(Args)]
+struct LoadCommand {
+    #[command(flatten)]
+    db: db::Options,
+    #[command(flatten)]
+    dataset: dataset::Options,
+    #[arg(long, short = 't', default_value_t = 1)]
+    num_threads: usize,
+}
+
+impl LoadCommand {
+    fn run(&self) -> Result<()> {
+        todo!()
+    }
+}
+
+#[derive(Args)]
+struct OpenCommand {
+    #[command(flatten)]
+    db: crate::db::Options,
+}
+
+impl OpenCommand {
+    fn run(self) -> Result<()> {
+        todo!()
+    }
 }
 
 fn main() -> Result<()> {
