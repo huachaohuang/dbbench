@@ -88,19 +88,19 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_uniform() {
+    fn test_uniform_generator() {
         test_generator(UniformGenerator::new());
     }
 
     #[test]
     #[ignore]
-    fn test_zipfian() {
+    fn test_zipfian_generator() {
         test_generator(ZipfianGenerator::new());
     }
 
     #[test]
     #[ignore]
-    fn test_sequential() {
+    fn test_sequential_generator() {
         test_generator(SequentialGenerator::new());
     }
 }

@@ -3,7 +3,7 @@ use rand::{Rng, rng};
 
 use crate::generator::{Generator, SequentialGenerator, UniformGenerator, ZipfianGenerator};
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 #[group(skip)]
 pub struct Options {
     #[arg(long, short, default_value_t = 10)]
@@ -62,5 +62,61 @@ impl Distribution {
             Self::Zipfian => Box::new(ZipfianGenerator::new()),
             Self::Sequential => Box::new(SequentialGenerator::new()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use super::*;
+
+    const NUM_RECORDS: usize = 100;
+
+    fn test_dataset(options: Options) {
+        let dataset = Dataset::new(options.clone());
+        let mut k = Vec::new();
+        let mut count = BTreeMap::new();
+        for _ in 0..(options.num_records * 10) {
+            dataset.next(&mut k);
+            count.entry(k.clone()).and_modify(|c| *c += 1).or_insert(1);
+        }
+        println!("{count:#?}");
+    }
+
+    #[test]
+    #[ignore]
+    fn test_uniform_dataset() {
+        let options = Options {
+            klen: 4,
+            vlen: 100,
+            num_records: NUM_RECORDS,
+            distribution: Distribution::Uniform,
+        };
+        test_dataset(options);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_zipfian_dataset() {
+        let options = Options {
+            klen: 8,
+            vlen: 100,
+            num_records: NUM_RECORDS,
+            distribution: Distribution::Zipfian,
+        };
+        test_dataset(options);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_sequential_dataset() {
+        let options = Options {
+            klen: 10,
+            vlen: 100,
+            num_records: NUM_RECORDS,
+            distribution: Distribution::Sequential,
+        };
+        test_dataset(options);
     }
 }
