@@ -1,9 +1,9 @@
 use clap::{Args, ValueEnum};
 use rand::{Rng, rng};
 
-use crate::generator::{Generator, Sequential, Uniform, Zipfian};
+use crate::generator::{Generator, SequentialGenerator, UniformGenerator, ZipfianGenerator};
 
-#[derive(Args)]
+#[derive(Args, Debug)]
 #[group(skip)]
 pub struct Options {
     #[arg(long, short, default_value_t = 10)]
@@ -16,13 +16,6 @@ pub struct Options {
     distribution: Distribution,
 }
 
-#[derive(Clone, ValueEnum)]
-enum Distribution {
-    Uniform,
-    Zipfian,
-    Sequential,
-}
-
 pub struct Dataset {
     options: Options,
     generator: Box<dyn Generator>,
@@ -30,11 +23,7 @@ pub struct Dataset {
 
 impl Dataset {
     pub fn new(options: Options) -> Self {
-        let generator: Box<dyn Generator> = match options.distribution {
-            Distribution::Uniform => Box::new(Uniform::new()),
-            Distribution::Zipfian => Box::new(Zipfian::new(options.num_records as u64)),
-            Distribution::Sequential => Box::new(Sequential::new()),
-        };
+        let generator = options.distribution.new_generator();
         Self { options, generator }
     }
 }
@@ -56,5 +45,22 @@ impl Dataset {
         self.next(k);
         v.resize(self.options.vlen, 0);
         rng().fill(&mut v[..]);
+    }
+}
+
+#[derive(Clone, Debug, ValueEnum)]
+enum Distribution {
+    Uniform,
+    Zipfian,
+    Sequential,
+}
+
+impl Distribution {
+    fn new_generator(&self) -> Box<dyn Generator> {
+        match self {
+            Self::Uniform => Box::new(UniformGenerator::new()),
+            Self::Zipfian => Box::new(ZipfianGenerator::new()),
+            Self::Sequential => Box::new(SequentialGenerator::new()),
+        }
     }
 }
