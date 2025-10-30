@@ -1,11 +1,17 @@
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand};
 
-mod dataset;
 mod db;
 mod generator;
+
 mod runtime;
+use runtime::Runtime;
+
+mod dataset;
+use dataset::Dataset;
+
 mod workload;
+use workload::Workload;
 
 #[derive(Parser)]
 #[command(about, version)]
@@ -34,14 +40,16 @@ struct RunCommand {
     workload: workload::Options,
     #[arg(long, short = 't', default_value_t = 1)]
     num_threads: usize,
-    #[arg(long, short = 'o', default_value_t = 1000)]
+    #[arg(long, short = 'o', default_value_t = 10000)]
     num_operations: usize,
 }
 
 impl RunCommand {
-    fn run(&self) -> Result<()> {
-        println!("{self:#?}");
-        Ok(())
+    fn run(self) -> Result<()> {
+        let db = self.db.open()?;
+        let dataset = Dataset::new(self.dataset);
+        let workload = Workload::new(self.workload);
+        Runtime::new(db, dataset, workload).run(self.num_threads, self.num_operations)
     }
 }
 
@@ -56,13 +64,20 @@ struct LoadCommand {
 }
 
 impl LoadCommand {
-    fn run(&self) -> Result<()> {
-        println!("{self:#?}");
-        todo!()
+    fn run(self) -> Result<()> {
+        let num_operations = self.dataset.num_records;
+        let cmd = RunCommand {
+            db: self.db,
+            dataset: self.dataset,
+            workload: workload::Options::new_for_load(),
+            num_threads: self.num_threads,
+            num_operations,
+        };
+        cmd.run()
     }
 }
 
-#[derive(Args)]
+#[derive(Args, Debug)]
 struct OpenCommand {
     #[command(flatten)]
     db: db::Options,
@@ -77,8 +92,17 @@ impl OpenCommand {
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Command::Run(cmd) => cmd.run(),
-        Command::Load(cmd) => cmd.run(),
-        Command::Open(cmd) => cmd.run(),
+        Command::Run(cmd) => {
+            println!("{cmd:#?}");
+            cmd.run()
+        }
+        Command::Load(cmd) => {
+            println!("{cmd:#?}");
+            cmd.run()
+        }
+        Command::Open(cmd) => {
+            println!("{cmd:#?}");
+            cmd.run()
+        }
     }
 }

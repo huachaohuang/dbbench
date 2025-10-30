@@ -25,7 +25,7 @@ impl UniformGenerator {
 
 impl Generator for UniformGenerator {
     fn next(&self) -> u64 {
-        rng().sample(&self.dist)
+        rng().sample(self.dist)
     }
 }
 
@@ -45,7 +45,7 @@ impl ZipfianGenerator {
 
 impl Generator for ZipfianGenerator {
     fn next(&self) -> u64 {
-        let x = rng().sample(&self.dist) as u64;
+        let x = rng().sample(self.dist) as u64;
         // Scatter hotspots
         self.hash.hash_one(x)
     }
@@ -83,7 +83,7 @@ mod tests {
             let x = generator.next() % MAX;
             count.entry(x).and_modify(|c| *c += 1).or_insert(1);
         }
-        println!("{:#?}", count);
+        println!("{count:#?}");
     }
 
     #[test]

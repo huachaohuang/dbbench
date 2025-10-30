@@ -10,18 +10,18 @@ use anyhow::Result;
 
 use crate::{
     dataset::Dataset,
-    db::Db,
+    db::Database,
     workload::{Operation, Workload},
 };
 
 pub struct Runtime {
-    db: Box<dyn Db>,
+    db: Box<dyn Database>,
     dataset: Dataset,
     workload: Workload,
 }
 
 impl Runtime {
-    pub fn new(db: Box<dyn Db>, dataset: Dataset, workload: Workload) -> Self {
+    pub fn new(db: Box<dyn Database>, dataset: Dataset, workload: Workload) -> Self {
         Self {
             db,
             dataset,
@@ -29,7 +29,7 @@ impl Runtime {
         }
     }
 
-    pub fn run(self, num_threads: usize, num_operations: usize) {
+    pub fn run(self, num_threads: usize, num_operations: usize) -> Result<()> {
         let context = Arc::new(Context::new(
             self.db,
             self.dataset,
@@ -42,13 +42,14 @@ impl Runtime {
             handles.push(std::thread::spawn(move || context.run()));
         }
         for handle in handles {
-            handle.join().unwrap().unwrap();
+            handle.join().unwrap();
         }
+        Ok(())
     }
 }
 
 struct Context {
-    db: Box<dyn Db>,
+    db: Box<dyn Database>,
     dataset: Dataset,
     workload: Workload,
     statistics: Statistics,
@@ -57,7 +58,12 @@ struct Context {
 }
 
 impl Context {
-    fn new(db: Box<dyn Db>, dataset: Dataset, workload: Workload, max_operations: usize) -> Self {
+    fn new(
+        db: Box<dyn Database>,
+        dataset: Dataset,
+        workload: Workload,
+        max_operations: usize,
+    ) -> Self {
         Self {
             db,
             dataset,
@@ -68,26 +74,25 @@ impl Context {
         }
     }
 
-    fn run(&self) -> Result<()> {
-        let mut kbuf = Vec::new();
-        let mut vbuf = Vec::new();
+    fn run(&self) {
+        let mut k = Vec::new();
+        let mut v = Vec::new();
         while let Some(op) = self.next_operation() {
             match op {
                 Operation::Read => {
-                    self.dataset.next(&mut kbuf);
-                    self.statistics.record(op, || self.db.read(&kbuf));
+                    self.dataset.next(&mut k);
+                    self.statistics.record(op, || self.db.read(&k));
                 }
                 Operation::Scan => {
-                    self.dataset.next(&mut kbuf);
-                    self.statistics.record(op, || self.db.scan(&kbuf, 10));
+                    self.dataset.next(&mut k);
+                    self.statistics.record(op, || self.db.scan(&k, 10));
                 }
                 Operation::Write => {
-                    self.dataset.next_record(&mut kbuf, &mut vbuf);
-                    self.statistics.record(op, || self.db.write(&kbuf, &vbuf));
+                    self.dataset.next_record(&mut k, &mut v);
+                    self.statistics.record(op, || self.db.write(&k, &v));
                 }
             }
         }
-        Ok(())
     }
 
     fn next_operation(&self) -> Option<Operation> {
@@ -115,6 +120,7 @@ impl LastReport {
 }
 
 struct Statistics {
+    start: Instant,
     count: AtomicUsize,
     failure: AtomicUsize,
     histograms: [AtomicHistogram; Operation::COUNT],
@@ -125,6 +131,7 @@ struct Statistics {
 impl Statistics {
     fn new() -> Self {
         Self {
+            start: Instant::now(),
             count: AtomicUsize::new(0),
             failure: AtomicUsize::new(0),
             histograms: Default::default(),
@@ -135,6 +142,8 @@ impl Statistics {
 }
 
 impl Statistics {
+    const REPORT_INTERVAL: Duration = Duration::from_secs(1);
+
     fn record<F>(&self, op: Operation, f: F)
     where
         F: FnOnce() -> Result<()>,
@@ -151,11 +160,11 @@ impl Statistics {
                 self.failure.fetch_add(1, Ordering::Relaxed);
             }
         }
+        self.report();
     }
 
     fn report(&self) {
         let count = self.count.load(Ordering::Relaxed);
-        let failure = self.failure.load(Ordering::Relaxed);
         let last_count = self.last_count.load(Ordering::Relaxed);
         if last_count - count < 1000 {
             return;
@@ -165,24 +174,26 @@ impl Statistics {
         };
 
         let now = Instant::now();
-        let duration = now.duration_since(last_report.time);
-        if duration < Duration::from_secs(1) {
+        let interval = now.duration_since(last_report.time);
+        if interval < Self::REPORT_INTERVAL {
             return;
         }
         last_report.time = now;
         self.last_count.store(count, Ordering::Release);
 
-        println!("--- Total: {} Failures: {} ---", count, failure);
+        let failure = self.failure.load(Ordering::Relaxed);
+        let elapsed = now.duration_since(self.start).as_secs();
+        println!("--- Total: {count} Failure: {failure} Elapsed: {elapsed}s ---");
         for (i, (hist, last_hist)) in self
             .histograms
             .iter()
             .zip(last_report.histograms.iter_mut())
             .enumerate()
         {
-            let current = hist.load();
-            let interval = current.sub(last_hist);
-            *last_hist = current;
-            println!("{:5?} - {}", Operation::from(i), interval.report(duration));
+            let current_hist = hist.load();
+            let interval_hist = current_hist.sub(last_hist);
+            interval_hist.report(Operation::from(i), interval);
+            *last_hist = current_hist;
         }
     }
 }
@@ -209,16 +220,16 @@ impl Histogram {
         Self { count, histogram }
     }
 
-    fn report(&self, duration: Duration) -> String {
-        let ops = self.count as f64 / duration.as_secs_f64();
+    fn report(&self, op: Operation, interval: Duration) {
+        let ops = self.count as f64 / interval.as_secs_f64();
         let p50 = self.percentile(50.0);
         let p95 = self.percentile(95.0);
         let p99 = self.percentile(99.0);
         let max = self.percentile(100.0);
-        format!(
-            "OPS: {:>7}, P50: {:>7}us, P95: {:>7}us, P99: {:>7}us, MAX: {:>7}us",
-            ops, p50, p95, p99, max
-        )
+        println!(
+            "{:>5?} - OPS: {:>7}, P50: {:>7}us, P95: {:>7}us, P99: {:>7}us, MAX: {:>7}us",
+            op, ops as u64, p50, p95, p99, max
+        );
     }
 
     fn percentile(&self, percentile: f64) -> u64 {

@@ -1,15 +1,25 @@
 use clap::Args;
 use rand::{Rng, distr::weighted::WeightedIndex, rng};
 
-#[derive(Args, Debug)]
+#[derive(Clone, Debug, Args)]
 #[group(skip)]
 pub struct Options {
     #[arg(long, short, default_value_t = 0.95)]
-    read_ratio: f32,
+    pub read_ratio: f32,
     #[arg(long, short, default_value_t = 0.00)]
-    scan_ratio: f32,
+    pub scan_ratio: f32,
     #[arg(long, short, default_value_t = 0.05)]
-    write_ratio: f32,
+    pub write_ratio: f32,
+}
+
+impl Options {
+    pub fn new_for_load() -> Self {
+        Self {
+            read_ratio: 0.0,
+            scan_ratio: 0.0,
+            write_ratio: 1.0,
+        }
+    }
 }
 
 pub struct Workload {
@@ -19,7 +29,7 @@ pub struct Workload {
 impl Workload {
     pub fn new(options: Options) -> Self {
         let dist =
-            WeightedIndex::new(&[options.read_ratio, options.scan_ratio, options.write_ratio])
+            WeightedIndex::new([options.read_ratio, options.scan_ratio, options.write_ratio])
                 .unwrap();
         Self { dist }
     }

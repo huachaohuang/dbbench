@@ -3,17 +3,17 @@ use rand::{Rng, rng};
 
 use crate::generator::{Generator, SequentialGenerator, UniformGenerator, ZipfianGenerator};
 
-#[derive(Args, Clone, Debug)]
+#[derive(Clone, Debug, Args)]
 #[group(skip)]
 pub struct Options {
     #[arg(long, short, default_value_t = 10)]
-    klen: usize,
+    pub klen: usize,
     #[arg(long, short, default_value_t = 100)]
-    vlen: usize,
-    #[arg(long, short, default_value_t = 1000)]
-    num_records: usize,
+    pub vlen: usize,
+    #[arg(long, short, default_value_t = 10000)]
+    pub num_records: usize,
     #[arg(long, short, value_enum, default_value_t = Distribution::Uniform)]
-    distribution: Distribution,
+    pub distribution: Distribution,
 }
 
 pub struct Dataset {
@@ -49,7 +49,7 @@ impl Dataset {
 }
 
 #[derive(Clone, Debug, ValueEnum)]
-enum Distribution {
+pub enum Distribution {
     Uniform,
     Zipfian,
     Sequential,
