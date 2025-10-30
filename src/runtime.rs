@@ -166,7 +166,7 @@ impl Statistics {
     fn report(&self) {
         let count = self.count.load(Ordering::Relaxed);
         let last_count = self.last_count.load(Ordering::Relaxed);
-        if last_count - count < 1000 {
+        if count - last_count < 1000 {
             return;
         }
         let Ok(mut last_report) = self.last_report.try_lock() else {
@@ -192,7 +192,9 @@ impl Statistics {
         {
             let current_hist = hist.load();
             let interval_hist = current_hist.sub(last_hist);
-            interval_hist.report(Operation::from(i), interval);
+            if interval_hist.count > 0 {
+                interval_hist.report(Operation::from(i), interval);
+            }
             *last_hist = current_hist;
         }
     }
@@ -201,6 +203,7 @@ impl Statistics {
 const GROUPING_POWER: u8 = 8;
 const MAX_VALUE_POWER: u8 = 64;
 
+#[derive(Clone, Debug)]
 struct Histogram {
     count: usize,
     histogram: histogram::Histogram,
@@ -227,14 +230,22 @@ impl Histogram {
         let p99 = self.percentile(99.0);
         let max = self.percentile(100.0);
         println!(
-            "{:>5?} - OPS: {:>7}, P50: {:>7}us, P95: {:>7}us, P99: {:>7}us, MAX: {:>7}us",
-            op, ops as u64, p50, p95, p99, max
+            "{:5} - OPS: {:5}, P50: {:5}us, P95: {:5}us, P99: {:5}us, MAX: {:5}us",
+            format!("{op:?}"),
+            ops as u64,
+            p50,
+            p95,
+            p99,
+            max
         );
     }
 
     fn percentile(&self, percentile: f64) -> u64 {
-        let bucket = self.histogram.percentile(percentile).unwrap().unwrap();
-        (bucket.end() - bucket.start()) / 2
+        self.histogram
+            .percentile(percentile)
+            .unwrap()
+            .map(|b| (b.end() - b.start()) / 2)
+            .unwrap_or(0)
     }
 }
 
