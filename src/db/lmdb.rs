@@ -3,14 +3,14 @@ use std::{hint::black_box, ops::Bound};
 use anyhow::Result;
 use heed::{Env, EnvFlags, EnvOpenOptions, types::Bytes};
 
-use crate::db::Options;
+use crate::db::{Database, Options};
 
-pub struct Database {
+pub struct Lmdb {
     env: Env,
     db: heed::Database<Bytes, Bytes>,
 }
 
-impl Database {
+impl Lmdb {
     pub fn open(options: Options) -> Result<Self> {
         let env = unsafe {
             let mut builder = EnvOpenOptions::new();
@@ -27,7 +27,7 @@ impl Database {
     }
 }
 
-impl super::Database for Database {
+impl Database for Lmdb {
     fn read(&self, k: &[u8]) -> Result<()> {
         let txn = self.env.read_txn()?;
         black_box({

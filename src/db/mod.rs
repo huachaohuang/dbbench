@@ -2,6 +2,10 @@ use anyhow::Result;
 use clap::{Args, ValueEnum};
 
 mod lmdb;
+use lmdb::Lmdb;
+
+mod rocksdb;
+use rocksdb::Rocksdb;
 
 #[derive(Clone, Debug, ValueEnum)]
 pub enum Name {
@@ -25,10 +29,13 @@ impl Options {
         std::fs::create_dir_all(&self.path)?;
         match self.db {
             Name::Lmdb => {
-                let db = lmdb::Database::open(self)?;
+                let db = Lmdb::open(self)?;
                 Ok(Box::new(db))
             }
-            Name::Rocksdb => todo!(),
+            Name::Rocksdb => {
+                let db = Rocksdb::open(self)?;
+                Ok(Box::new(db))
+            }
             Name::Wiredtiger => todo!(),
         }
     }
