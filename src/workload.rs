@@ -1,7 +1,7 @@
 use clap::Args;
 use rand::{Rng, distr::weighted::WeightedIndex, rng};
 
-#[derive(Args)]
+#[derive(Args, Debug)]
 #[group(skip)]
 pub struct Options {
     #[arg(long, short, default_value_t = 0.95)]

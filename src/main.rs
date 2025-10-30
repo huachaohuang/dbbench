@@ -24,7 +24,7 @@ enum Command {
     Open(OpenCommand),
 }
 
-#[derive(Args)]
+#[derive(Args, Debug)]
 struct RunCommand {
     #[command(flatten)]
     db: db::Options,
@@ -40,11 +40,12 @@ struct RunCommand {
 
 impl RunCommand {
     fn run(&self) -> Result<()> {
-        todo!()
+        println!("{self:#?}");
+        Ok(())
     }
 }
 
-#[derive(Args)]
+#[derive(Args, Debug)]
 struct LoadCommand {
     #[command(flatten)]
     db: db::Options,
@@ -56,6 +57,7 @@ struct LoadCommand {
 
 impl LoadCommand {
     fn run(&self) -> Result<()> {
+        println!("{self:#?}");
         todo!()
     }
 }
@@ -63,7 +65,7 @@ impl LoadCommand {
 #[derive(Args)]
 struct OpenCommand {
     #[command(flatten)]
-    db: crate::db::Options,
+    db: db::Options,
 }
 
 impl OpenCommand {

@@ -9,16 +9,16 @@ pub trait Db: Send + Sync {
     fn write(&self, k: &[u8], v: &[u8]) -> Result<()>;
 }
 
-#[derive(Clone, ValueEnum)]
+#[derive(Clone, Debug, ValueEnum)]
 pub enum Name {
     Lmdb,
     Rocksdb,
     Wiredtiger,
 }
 
-#[derive(Args)]
+#[derive(Args, Debug)]
 pub struct Options {
-    name: Name,
+    db: Name,
     path: String,
 }
 
