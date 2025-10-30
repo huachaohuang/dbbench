@@ -3,12 +3,15 @@ use std::hint::black_box;
 use anyhow::Result;
 use rocksdb::{
     BlockBasedOptions, Cache, DB, DBCompressionType, IteratorMode, Options as DbOptions,
+    ReadOptions, WriteOptions,
 };
 
 use crate::db::{Database, Options};
 
 pub struct Rocksdb {
     db: DB,
+    ropts: ReadOptions,
+    wopts: WriteOptions,
 }
 
 impl Rocksdb {
@@ -16,6 +19,10 @@ impl Rocksdb {
         let block_cache_size = options.cache_size / 8 * 7;
         let write_buffer_size = options.cache_size - block_cache_size;
         let num_background_threads = 4;
+        let mut ropts = ReadOptions::default();
+        ropts.fill_cache(true);
+        let mut wopts = WriteOptions::default();
+        wopts.set_sync(options.sync);
         let mut topts = BlockBasedOptions::default();
         topts.set_block_cache(&Cache::new_lru_cache(block_cache_size));
         topts.set_bloom_filter(10.0, true);
@@ -30,22 +37,24 @@ impl Rocksdb {
         dbopts.set_block_based_table_factory(&topts);
         dbopts.optimize_level_style_compaction(write_buffer_size);
         let db = DB::open(&dbopts, options.path)?;
-        Ok(Self { db })
+        Ok(Self { db, ropts, wopts })
     }
 }
 
 impl Database for Rocksdb {
     fn read(&self, k: &[u8]) -> Result<()> {
         black_box({
-            self.db.get(k)?;
+            self.db.get_opt(k, &self.ropts)?;
         });
         Ok(())
     }
 
     fn scan(&self, k: &[u8], n: usize) -> Result<()> {
+        let mut ropts = ReadOptions::default();
+        ropts.fill_cache(true);
         let mut iter = self
             .db
-            .iterator(IteratorMode::From(k, rocksdb::Direction::Forward));
+            .iterator_opt(IteratorMode::From(k, rocksdb::Direction::Forward), ropts);
         black_box({
             for _ in 0..n {
                 iter.next();
@@ -55,7 +64,7 @@ impl Database for Rocksdb {
     }
 
     fn write(&self, k: &[u8], v: &[u8]) -> Result<()> {
-        self.db.put(k, v)?;
+        self.db.put_opt(k, v, &self.wopts)?;
         Ok(())
     }
 }
