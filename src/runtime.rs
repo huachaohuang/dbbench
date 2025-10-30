@@ -150,7 +150,7 @@ impl Statistics {
     {
         let start = Instant::now();
         let result = f();
-        let duration = start.elapsed().as_micros() as u64;
+        let duration = start.elapsed();
         self.count.fetch_add(1, Ordering::Relaxed);
         match result {
             Ok(_) => {
@@ -268,9 +268,11 @@ impl AtomicHistogram {
         }
     }
 
-    fn add(&self, us: u64) {
+    fn add(&self, duration: Duration) {
         self.count.fetch_add(1, Ordering::Relaxed);
-        self.histogram.increment(us).unwrap();
+        self.histogram
+            .increment(duration.as_micros() as u64)
+            .unwrap();
     }
 
     fn load(&self) -> Histogram {
