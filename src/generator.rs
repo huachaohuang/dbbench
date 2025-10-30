@@ -35,13 +35,9 @@ pub struct ZipfianGenerator {
 }
 
 impl ZipfianGenerator {
-    // Constants from YCSB
-    const N: f64 = 10_000_000_000.0;
-    const S: f64 = 0.99;
-
     pub fn new() -> Self {
         Self {
-            dist: Zipf::new(Self::N, Self::S).unwrap(),
+            dist: Zipf::new(u64::MAX as f64, 0.99).unwrap(),
             hash: FnvBuildHasher::new(),
         }
     }
@@ -70,5 +66,41 @@ impl SequentialGenerator {
 impl Generator for SequentialGenerator {
     fn next(&self) -> u64 {
         self.count.fetch_add(1, Ordering::Relaxed)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use super::*;
+
+    const MAX: u64 = 100;
+
+    fn test_generator<G: Generator>(generator: G) {
+        let mut count = BTreeMap::new();
+        for _ in 0..(MAX * 10) {
+            let x = generator.next() % MAX;
+            count.entry(x).and_modify(|c| *c += 1).or_insert(1);
+        }
+        println!("{:#?}", count);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_uniform() {
+        test_generator(UniformGenerator::new());
+    }
+
+    #[test]
+    #[ignore]
+    fn test_zipfian() {
+        test_generator(ZipfianGenerator::new());
+    }
+
+    #[test]
+    #[ignore]
+    fn test_sequential() {
+        test_generator(SequentialGenerator::new());
     }
 }
