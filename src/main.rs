@@ -40,7 +40,7 @@ struct RunCommand {
     workload: workload::Options,
     #[arg(long, short = 't', default_value_t = 1)]
     num_threads: usize,
-    #[arg(long, short = 'o', default_value_t = 10000)]
+    #[arg(long, short = 'o', default_value_t = 1_000_000)]
     num_operations: usize,
 }
 

@@ -32,10 +32,12 @@ impl Rocksdb {
         dbopts.set_enable_pipelined_write(true);
         dbopts.set_optimize_filters_for_hits(true);
         dbopts.set_avoid_unnecessary_blocking_io(true);
-        dbopts.set_compression_type(DBCompressionType::None);
-        dbopts.increase_parallelism(num_background_threads);
         dbopts.set_block_based_table_factory(&topts);
         dbopts.optimize_level_style_compaction(write_buffer_size);
+        // The above function enables compression, we disable it here.
+        dbopts.set_compression_type(DBCompressionType::None);
+        dbopts.set_compression_per_level(&[DBCompressionType::None; 7]);
+        dbopts.increase_parallelism(num_background_threads);
         let db = DB::open(&dbopts, options.path)?;
         Ok(Self { db, ropts, wopts })
     }

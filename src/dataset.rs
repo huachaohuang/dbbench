@@ -10,7 +10,7 @@ pub struct Options {
     pub klen: usize,
     #[arg(long, short, default_value_t = 100)]
     pub vlen: usize,
-    #[arg(long, short, default_value_t = 10000)]
+    #[arg(long, short, default_value_t = 1_000_000)]
     pub num_records: usize,
     #[arg(long, short, value_enum, default_value_t = Distribution::Uniform)]
     pub distribution: Distribution,

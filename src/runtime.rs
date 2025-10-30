@@ -230,7 +230,7 @@ impl Histogram {
         let p99 = self.percentile(99.0);
         let max = self.percentile(100.0);
         println!(
-            "{:5} - OPS: {:5}, P50: {:5}us, P95: {:5}us, P99: {:5}us, MAX: {:5}us",
+            "{:5} - OPS: {:7}, P50: {:5}us, P95: {:5}us, P99: {:5}us, MAX: {:5}us",
             format!("{op:?}"),
             ops as u64,
             p50,
@@ -244,7 +244,7 @@ impl Histogram {
         self.histogram
             .percentile(percentile)
             .unwrap()
-            .map(|b| (b.end() - b.start()) / 2)
+            .map(|b| (b.start() + b.end()) / 2)
             .unwrap_or(0)
     }
 }
