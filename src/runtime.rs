@@ -144,9 +144,9 @@ impl Statistics {
 impl Statistics {
     const REPORT_INTERVAL: Duration = Duration::from_secs(1);
 
-    fn record<F>(&self, op: Operation, f: F)
+    fn record<F, O>(&self, op: Operation, f: F)
     where
-        F: FnOnce() -> Result<()>,
+        F: FnOnce() -> Result<O>,
     {
         let start = Instant::now();
         let result = f();

@@ -44,11 +44,14 @@ impl Rocksdb {
 }
 
 impl Database for Rocksdb {
-    fn read(&self, k: &[u8]) -> Result<()> {
-        black_box({
-            self.db.get_opt(k, &self.ropts)?;
-        });
-        Ok(())
+    fn stat(&self) -> Result<String> {
+        let stat = self.db.property_value("rocksdb.stats")?;
+        Ok(stat.unwrap_or_default())
+    }
+
+    fn read(&self, k: &[u8]) -> Result<bool> {
+        let value = self.db.get_pinned_opt(k, &self.ropts)?;
+        Ok(value.is_some())
     }
 
     fn scan(&self, k: &[u8], n: usize) -> Result<()> {

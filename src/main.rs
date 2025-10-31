@@ -1,3 +1,5 @@
+use std::io::stdin;
+
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand};
 
@@ -85,7 +87,48 @@ struct OpenCommand {
 
 impl OpenCommand {
     fn run(self) -> Result<()> {
-        todo!()
+        let db = self.db.open()?;
+        loop {
+            let mut line = String::new();
+            stdin().read_line(&mut line)?;
+            let mut args = line.split_whitespace();
+            match args.next() {
+                Some("help") => {
+                    println!("Commands:");
+                    println!("  help                 Show this help message");
+                    println!("  stat                 Show database statistics");
+                    println!("  read <KEY>           Read the value for the given KEY");
+                    println!("  write <KEY> <VALUE>  Write the VALUE for the given KEY");
+                }
+                Some("stat") => match db.stat() {
+                    Ok(stat) => println!("{stat}"),
+                    Err(e) => println!("Error: {e}"),
+                },
+                Some("read") => {
+                    let Some(k) = args.next() else {
+                        println!("Usage: read <KEY>");
+                        continue;
+                    };
+                    match db.read(k.as_bytes()) {
+                        Ok(true) => println!("Some"),
+                        Ok(false) => println!("None"),
+                        Err(e) => println!("Error: {e}"),
+                    }
+                }
+                Some("write") => {
+                    let (Some(k), Some(v)) = (args.next(), args.next()) else {
+                        println!("Usage: write <KEY> <VALUE>");
+                        continue;
+                    };
+                    match db.write(k.as_bytes(), v.as_bytes()) {
+                        Ok(()) => println!("OK"),
+                        Err(e) => println!("Error: {e}"),
+                    }
+                }
+                Some(c) => println!("Unknown command '{c}', type 'help' to see available commands"),
+                _ => continue,
+            }
+        }
     }
 }
 
@@ -100,9 +143,6 @@ fn main() -> Result<()> {
             println!("{cmd:#?}");
             cmd.run()
         }
-        Command::Open(cmd) => {
-            println!("{cmd:#?}");
-            cmd.run()
-        }
+        Command::Open(cmd) => cmd.run(),
     }
 }

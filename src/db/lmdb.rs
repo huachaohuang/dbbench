@@ -28,13 +28,17 @@ impl Lmdb {
 }
 
 impl Database for Lmdb {
-    fn read(&self, k: &[u8]) -> Result<()> {
+    fn stat(&self) -> Result<String> {
         let txn = self.env.read_txn()?;
-        black_box({
-            self.db.get(&txn, k)?;
-        });
+        let stat = self.db.stat(&txn)?;
+        Ok(format!("{stat:#?}"))
+    }
+
+    fn read(&self, k: &[u8]) -> Result<bool> {
+        let txn = self.env.read_txn()?;
+        let found = self.db.get(&txn, k)?.is_some();
         txn.commit()?;
-        Ok(())
+        Ok(found)
     }
 
     fn scan(&self, k: &[u8], n: usize) -> Result<()> {

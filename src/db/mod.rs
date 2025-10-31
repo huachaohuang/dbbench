@@ -42,7 +42,9 @@ impl Options {
 }
 
 pub trait Database: Send + Sync {
-    fn read(&self, k: &[u8]) -> Result<()>;
+    fn stat(&self) -> Result<String>;
+
+    fn read(&self, k: &[u8]) -> Result<bool>;
 
     fn scan(&self, k: &[u8], n: usize) -> Result<()>;
 
