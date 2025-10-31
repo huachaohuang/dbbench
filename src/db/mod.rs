@@ -11,7 +11,6 @@ use rocksdb::Rocksdb;
 pub enum Name {
     Lmdb,
     Rocksdb,
-    Wiredtiger,
 }
 
 #[derive(Clone, Debug, Args)]
