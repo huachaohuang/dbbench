@@ -35,7 +35,6 @@ impl Options {
                 let db = Rocksdb::open(self)?;
                 Ok(Box::new(db))
             }
-            Name::Wiredtiger => todo!(),
         }
     }
 }
